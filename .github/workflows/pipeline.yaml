@@ -5,18 +5,18 @@ on:
     branches:
       - main
 
+env:
+  ACR_NAME: devopsghacr98421
+  IMAGE_NAME: devops-node-app
+  RESOURCE_GROUP: devops-gha-rg
+
 jobs:
 
   build-test:
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: app
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -24,18 +24,41 @@ jobs:
           node-version: 18
 
       - name: Install dependencies
-        run: npm install
+        run: |
+          cd app
+          npm install
 
-      - name: Run tests
-        run: npm test
+      - name: Run Unit Tests
+        run: |
+          cd app
+          npm test
 
-  build-push-image:
+
+  security-scan:
     needs: build-test
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: Build Image
+        run: docker build -t devops-node-app ./app
+
+      - name: Run Trivy Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: devops-node-app
+          format: table
+          exit-code: 1
+          severity: CRITICAL,HIGH
+
+
+  build-push-image:
+    needs: security-scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Azure Login
         uses: azure/login@v1
@@ -43,16 +66,51 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Build Docker image
-        run: docker build -t devops-node-app ./app
+        run: |
+          docker build -t $ACR_NAME.azurecr.io/$IMAGE_NAME:latest ./app
 
       - name: Login to ACR
         run: |
-          az acr login --name devopsghacr98421
-
-      - name: Tag image
-        run: |
-          docker tag devops-node-app devopsghacr98421.azurecr.io/devops-node-app:latest
+          az acr login --name $ACR_NAME
 
       - name: Push image
         run: |
-          docker push devopsghacr98421.azurecr.io/devops-node-app:latest
+          docker push $ACR_NAME.azurecr.io/$IMAGE_NAME:latest
+
+
+  deploy-dev:
+    needs: build-push-image
+    runs-on: ubuntu-latest
+    environment: dev
+
+    steps:
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to DEV
+        run: |
+          az containerapp update \
+            --name devops-app-dev \
+            --resource-group $RESOURCE_GROUP \
+            --image $ACR_NAME.azurecr.io/$IMAGE_NAME:latest
+
+
+  deploy-prod:
+    needs: deploy-dev
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to PROD
+        run: |
+          az containerapp update \
+            --name devops-app-prod \
+            --resource-group $RESOURCE_GROUP \
+            --image $ACR_NAME.azurecr.io/$IMAGE_NAME:latest
