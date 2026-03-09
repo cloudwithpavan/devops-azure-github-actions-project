@@ -5,6 +5,9 @@
 ![Docker](https://img.shields.io/badge/Container-Docker-blue)
 ![Azure](https://img.shields.io/badge/Cloud-Azure-blue)
 ![Node.js](https://img.shields.io/badge/App-Node.js-green)
+![Security](https://img.shields.io/badge/Security-Trivy-red)
+![Monitoring](https://img.shields.io/badge/Monitoring-Azure%20Monitor-orange)
+![Pipeline Status](https://github.com/cloudwithpavan/devops-azure-github-actions-project/actions/workflows/pipeline.yaml/badge.svg)
 
 This project demonstrates a **production-grade DevOps CI/CD pipeline** for deploying a **containerized Node.js application** to Microsoft Azure using modern cloud-native technologies.
 
