@@ -1,3 +1,5 @@
+
+
 # 🚀 Production-Grade CI/CD Pipeline with GitHub Actions, Terraform, and Azure Container Apps
 
 ![CI/CD](https://img.shields.io/badge/CI/CD-GitHub%20Actions-blue)
@@ -52,15 +54,11 @@ The application is deployed using **Azure Container Apps**.
 
 Example endpoint format:
 
-```
 https://devops-app-prod.<region>.azurecontainerapps.io
-```
 
 ---
 
 # 🏗 Architecture Diagram
-
-The following diagram illustrates the DevOps architecture used in this project.
 
 ![Architecture Diagram](screenshots/architecture-diagram.png)
 
@@ -68,43 +66,42 @@ The following diagram illustrates the DevOps architecture used in this project.
 
 # ⚙️ Architecture Workflow
 
-```
 Developer
-   │
-   ▼
+↓
 GitHub Repository
-   │
-   ▼
+↓
 GitHub Actions CI/CD Pipeline
-   │
-   ├── Build Node.js Application
-   ├── Run Tests
-   ├── Security Scan (Trivy)
-   ├── Build Docker Image
-   └── Push Image → Azure Container Registry
-   │
-   ▼
+
+* Build Node.js Application
+* Run Tests
+* Security Scan (Trivy)
+* Build Docker Image
+* Push Image → Azure Container Registry
+
+↓
+
 Deployment Workflow
-   │
-   ├── Deploy to Dev Environment
-   ├── Manual Approval Gate
-   └── Deploy to Production
-   │
-   ▼
+
+* Deploy to Dev Environment
+* Manual Approval Gate
+* Deploy to Production
+
+↓
+
 Azure Container Apps
-   │
-   ├── Node.js Container
-   ├── Blue-Green Deployment
-   ├── Revision-Based Releases
-   └── Traffic Splitting
-   │
-   ▼
+
+* Node.js Container
+* Blue-Green Deployment
+* Revision-Based Releases
+* Traffic Splitting
+
+↓
+
 Azure Monitor + Log Analytics
-   │
-   ├── Application Logs
-   ├── Container Metrics
-   └── Alerts
-```
+
+* Application Logs
+* Container Metrics
+* Alerts
 
 ---
 
@@ -209,16 +206,52 @@ Logs available:
 
 Example Log Analytics query:
 
-```
 ContainerAppConsoleLogs_CL
 | limit 50
-```
 
 ---
 
 # 📈 Monitoring Dashboard
 
-![Monitoring](screenshots/monitoring.png)
+## Container CLI Logs
+
+![Container Logs](screenshots/monitoring/01-container-cli-logs.png)
+
+---
+
+## Container Revision Details
+
+![Revision Details](screenshots/monitoring/02-container-revision-details.png)
+
+---
+
+## Application Runtime Logs
+
+![Runtime Logs](screenshots/monitoring/03-application-runtime-logs.png)
+
+---
+
+## Container Port Configuration
+
+![Container Port](screenshots/monitoring/04-container-port-configuration.png)
+
+---
+
+## Log Analytics Tables
+
+![Log Analytics Tables](screenshots/monitoring/05-log-analytics-tables.png)
+
+---
+
+## Log Analytics Query Results
+
+![Log Analytics Query](screenshots/monitoring/06-log-analytics-query-results.png)
+
+---
+
+## Azure Monitor Metrics Dashboard
+
+![Metrics Dashboard](screenshots/monitoring/07-container-metrics-dashboard.png)
 
 ---
 
@@ -241,30 +274,36 @@ Terraform state is stored remotely using **Azure Storage backend**.
 
 # 📂 Project Structure
 
-```
 devops-azure-github-actions-project
-│
-├── app/
-│   ├── Dockerfile
-│   └── Node.js application
-│
-├── terraform/
-│   ├── main.tf
-│   ├── variables.tf
-│   └── backend.tf
-│
-├── .github/workflows/
-│   └── pipeline.yml
-│
-├── screenshots/
-│   ├── architecture-diagram.png
-│   ├── pipeline.png
-│   ├── blue-green.png
-│   ├── traffic.png
-│   └── monitoring.png
-│
-└── README.md
-```
+
+app/
+Dockerfile
+Node.js application
+
+terraform/
+main.tf
+variables.tf
+backend.tf
+
+.github/workflows/
+pipeline.yml
+
+screenshots/
+architecture-diagram.png
+pipeline.png
+blue-green.png
+traffic.png
+
+monitoring/
+01-container-cli-logs.png
+02-container-revision-details.png
+03-application-runtime-logs.png
+04-container-port-configuration.png
+05-log-analytics-tables.png
+06-log-analytics-query-results.png
+07-container-metrics-dashboard.png
+
+README.md
 
 ---
 
@@ -272,27 +311,19 @@ devops-azure-github-actions-project
 
 ## Restart Container App
 
-```
 az containerapp revision restart --name devops-app-prod --resource-group devops-gha-rg
-```
 
 ## View Application Logs
 
-```
 az containerapp logs show --name devops-app-prod --resource-group devops-gha-rg
-```
 
 ## Check Active Revisions
 
-```
 az containerapp revision list --name devops-app-prod --resource-group devops-gha-rg --output table
-```
 
 ## Rollback Deployment
 
-```
 az containerapp ingress traffic set --name devops-app-prod --resource-group devops-gha-rg --revision-weight devops-app-prod-0000001=100
-```
 
 ## Monitor Metrics
 
@@ -342,6 +373,9 @@ If you find this project helpful:
 
 DevOps Engineer | Cloud & CI/CD Enthusiast
 
-GitHub: https://github.com/cloudwithpavan
+GitHub
+https://github.com/cloudwithpavan
 
-Email: pavan7071@gmail.com
+Email
+[pavan7071@gmail.com](mailto:pavan7071@gmail.com)
+
