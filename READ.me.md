@@ -279,7 +279,7 @@ If you find this project helpful:
 
 # 👨‍💻 Author
 
-## Pavan Kumar Gummadi##
+# Pavan Kumar Gummadi
 
 DevOps Portfolio Project
 
