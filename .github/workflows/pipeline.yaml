@@ -1,0 +1,58 @@
+name: DevOps CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+
+  build-test:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+  build-push-image:
+    needs: build-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Build Docker image
+        run: docker build -t devops-node-app ./app
+
+      - name: Login to ACR
+        run: |
+          az acr login --name devopsghacr123
+
+      - name: Tag image
+        run: |
+          docker tag devops-node-app devopsghacr123.azurecr.io/devops-node-app:latest
+
+      - name: Push image
+        run: |
+          docker push devopsghacr123.azurecr.io/devops-node-app:latest
