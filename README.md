@@ -64,55 +64,45 @@ https://devops-app-prod.<region>.azurecontainerapps.io
 
 ---
 
-# ⚙️ Architecture Workflow
+## ⚙️ Architecture Workflow
 
+mermaid
+flowchart TD
 
-                    Developer
-                        │
-                        ▼
-               GitHub Repository
-                        │
-                        ▼
-            GitHub Actions CI/CD Pipeline
-                        │
-        ┌───────────────┼────────────────┐
-        │               │                │
-        ▼               ▼                ▼
- Build Node.js     Run Tests      Security Scan
- Application                        (Trivy)
-        │
-        ▼
-   Build Docker Image
-        │
-        ▼
-Push Image → Azure Container Registry
-        │
-        ▼
-          Deployment Workflow
-        ┌───────────────┼────────────────┐
-        │                                │
-        ▼                                ▼
- Deploy to Dev Environment        Manual Approval
-                                          │
-                                          ▼
-                                 Deploy to Production
-                                          │
-                                          ▼
-                                 Azure Container Apps
-                                          │
-        ┌───────────────┼────────────────┼───────────────┐
-        │               │                │               │
-        ▼               ▼                ▼               ▼
-   Node.js Container   Revisions   Blue-Green Deploy   Traffic Split
-                                          │
-                                          ▼
-                           Azure Monitor + Log Analytics
-                                          │
-                 ┌────────────────────────┼────────────────────────┐
-                 ▼                        ▼                        ▼
-           Application Logs          Container Metrics           Alerts
+A[Developer] --> B[GitHub Repository]
 
+B --> C[GitHub Actions CI/CD Pipeline]
 
+C --> D[Build Node.js Application]
+C --> E[Run Tests]
+C --> F[Security Scan - Trivy]
+
+D --> G[Build Docker Image]
+E --> G
+F --> G
+
+G --> H[Push Image to Azure Container Registry]
+
+H --> I[Deploy to Dev Environment]
+
+I --> J[Manual Approval Gate]
+
+J --> K[Deploy to Production]
+
+K --> L[Azure Container Apps]
+
+L --> M[Node.js Container]
+L --> N[Blue-Green Deployment]
+L --> O[Revision Releases]
+L --> P[Traffic Splitting]
+
+L --> Q[Azure Monitor + Log Analytics]
+
+Q --> R[Application Logs]
+Q --> S[Container Metrics]
+Q --> T[Alerts]
+
+           
 ---
 
 # 🧰 Tech Stack
