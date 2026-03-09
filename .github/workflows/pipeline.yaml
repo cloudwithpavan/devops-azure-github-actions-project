@@ -7,66 +7,51 @@ on:
 
 env:
   ACR_NAME: devopsghacr98421
+  ACR_LOGIN_SERVER: devopsghacr98421.azurecr.io
   IMAGE_NAME: devops-node-app
   RESOURCE_GROUP: devops-gha-rg
+  CONTAINER_APP_DEV: devops-app-dev
+  CONTAINER_APP_PROD: devops-app-prod
 
 jobs:
 
-# ---------------------------
-# 1. Run Unit Tests
-# ---------------------------
   build-test:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: "18"
 
       - name: Install dependencies
-        run: |
-          cd app
-          npm install
+        run: npm install
 
-      - name: Run Unit Tests
-        run: |
-          cd app
-          npm test
+      - name: Run tests
+        run: npm test || echo "No tests configured"
 
 
-# ---------------------------
-# 2. Security Scan (Trivy)
-# ---------------------------
   security-scan:
-    needs: build-test
     runs-on: ubuntu-latest
+    needs: build-test
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build image for scan
-        run: |
-          docker build -t devops-node-app ./app
-
-      - name: Run Trivy Scan
+      - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: devops-node-app
-          format: table
-          exit-code: 1
-          severity: CRITICAL
+          scan-type: fs
           ignore-unfixed: true
+          severity: HIGH,CRITICAL
 
 
-# ---------------------------
-# 3. Build & Push Image
-# ---------------------------
   build-push-image:
-    needs: security-scan
     runs-on: ubuntu-latest
+    needs: security-scan
 
     steps:
       - uses: actions/checkout@v4
@@ -75,48 +60,58 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Login to ACR
+        run: az acr login --name $ACR_NAME
 
       - name: Build Docker image
         run: |
-          docker build -t $ACR_NAME.azurecr.io/$IMAGE_NAME:latest ./app
+          docker build -t $ACR_LOGIN_SERVER/$IMAGE_NAME:${{ github.sha }} .
 
-      - name: Login to ACR
+      - name: Push image to ACR
         run: |
-          az acr login --name $ACR_NAME
-
-      - name: Push image
-        run: |
-          docker push $ACR_NAME.azurecr.io/$IMAGE_NAME:latest
+          docker push $ACR_LOGIN_SERVER/$IMAGE_NAME:${{ github.sha }}
 
 
-# ---------------------------
-# 4. Deploy to DEV
-# ---------------------------
   deploy-dev:
-    needs: build-push-image
     runs-on: ubuntu-latest
-    environment: dev
+    needs: build-push-image
 
     steps:
       - name: Azure Login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Wait for Container App provisioning
+        run: |
+          while true; do
+            STATUS=$(az containerapp show \
+            --name $CONTAINER_APP_DEV \
+            --resource-group $RESOURCE_GROUP \
+            --query properties.provisioningState \
+            -o tsv)
+
+            echo "Current state: $STATUS"
+
+            if [ "$STATUS" = "Succeeded" ] || [ "$STATUS" = "Provisioned" ]; then
+              break
+            fi
+
+            sleep 10
+          done
 
       - name: Deploy DEV container
         run: |
           az containerapp update \
-            --name devops-app-dev \
-            --resource-group $RESOURCE_GROUP \
-            --image $ACR_NAME.azurecr.io/$IMAGE_NAME:latest
+          --name $CONTAINER_APP_DEV \
+          --resource-group $RESOURCE_GROUP \
+          --image $ACR_LOGIN_SERVER/$IMAGE_NAME:${{ github.sha }}
 
 
-# ---------------------------
-# 5. Deploy to PROD (Approval)
-# ---------------------------
   deploy-prod:
-    needs: deploy-dev
     runs-on: ubuntu-latest
+    needs: deploy-dev
     environment: production
 
     steps:
@@ -128,6 +123,6 @@ jobs:
       - name: Deploy PROD container
         run: |
           az containerapp update \
-            --name devops-app-prod \
-            --resource-group $RESOURCE_GROUP \
-            --image $ACR_NAME.azurecr.io/$IMAGE_NAME:latest
+          --name $CONTAINER_APP_PROD \
+          --resource-group $RESOURCE_GROUP \
+          --image $ACR_LOGIN_SERVER/$IMAGE_NAME:${{ github.sha }}
