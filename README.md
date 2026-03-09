@@ -64,8 +64,10 @@ https://devops-app-prod.<region>.azurecontainerapps.io
 
 ---
 
+
 ## ⚙️ Architecture Workflow
 
+```
 Developer
    │
    ▼
@@ -101,6 +103,8 @@ Azure Monitor + Log Analytics
    ├── Application Logs
    ├── Container Metrics
    └── Alerts
+```
+
 
            
 ---
