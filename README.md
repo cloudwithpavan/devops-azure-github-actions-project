@@ -66,42 +66,52 @@ https://devops-app-prod.<region>.azurecontainerapps.io
 
 # ⚙️ Architecture Workflow
 
-Developer
-↓
-GitHub Repository
-↓
-GitHub Actions CI/CD Pipeline
 
-* Build Node.js Application
-* Run Tests
-* Security Scan (Trivy)
-* Build Docker Image
-* Push Image → Azure Container Registry
+                    Developer
+                        │
+                        ▼
+               GitHub Repository
+                        │
+                        ▼
+            GitHub Actions CI/CD Pipeline
+                        │
+        ┌───────────────┼────────────────┐
+        │               │                │
+        ▼               ▼                ▼
+ Build Node.js     Run Tests      Security Scan
+ Application                        (Trivy)
+        │
+        ▼
+   Build Docker Image
+        │
+        ▼
+Push Image → Azure Container Registry
+        │
+        ▼
+          Deployment Workflow
+        ┌───────────────┼────────────────┐
+        │                                │
+        ▼                                ▼
+ Deploy to Dev Environment        Manual Approval
+                                          │
+                                          ▼
+                                 Deploy to Production
+                                          │
+                                          ▼
+                                 Azure Container Apps
+                                          │
+        ┌───────────────┼────────────────┼───────────────┐
+        │               │                │               │
+        ▼               ▼                ▼               ▼
+   Node.js Container   Revisions   Blue-Green Deploy   Traffic Split
+                                          │
+                                          ▼
+                           Azure Monitor + Log Analytics
+                                          │
+                 ┌────────────────────────┼────────────────────────┐
+                 ▼                        ▼                        ▼
+           Application Logs          Container Metrics           Alerts
 
-↓
-
-Deployment Workflow
-
-* Deploy to Dev Environment
-* Manual Approval Gate
-* Deploy to Production
-
-↓
-
-Azure Container Apps
-
-* Node.js Container
-* Blue-Green Deployment
-* Revision-Based Releases
-* Traffic Splitting
-
-↓
-
-Azure Monitor + Log Analytics
-
-* Application Logs
-* Container Metrics
-* Alerts
 
 ---
 
