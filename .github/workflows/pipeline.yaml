@@ -47,12 +47,12 @@ jobs:
 
       - name: Login to ACR
         run: |
-          az acr login --name devopsghacr123
+          az acr login --name devopsghacr98421
 
       - name: Tag image
         run: |
-          docker tag devops-node-app devopsghacr123.azurecr.io/devops-node-app:latest
+          docker tag devops-node-app devopsghacr98421.azurecr.io/devops-node-app:latest
 
       - name: Push image
         run: |
-          docker push devopsghacr123.azurecr.io/devops-node-app:latest
+          docker push devopsghacr98421.azurecr.io/devops-node-app:latest
