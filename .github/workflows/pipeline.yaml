@@ -1,9 +1,18 @@
+```yaml
 name: DevOps CI/CD
 
 on:
   push:
     branches:
       - main
+    paths:
+      - "app/**"
+      - "terraform/**"
+      - ".github/workflows/**"
+
+concurrency:
+  group: devops-pipeline
+  cancel-in-progress: true
 
 env:
   ACR_NAME: devopsghacr98421
@@ -16,26 +25,28 @@ env:
 jobs:
 
   build-test:
-  runs-on: ubuntu-latest
+    runs-on: ubuntu-latest
 
-  defaults:
-    run:
-      working-directory: app
+    defaults:
+      run:
+        working-directory: app
 
-  steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup Node
-      uses: actions/setup-node@v4
-      with:
-        node-version: 18
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+          cache-dependency-path: app/package-lock.json
 
-    - name: Install dependencies
-      run: npm install
+      - name: Install dependencies
+        run: npm install
 
-    - name: Run tests
-      run: npm test
+      - name: Run tests
+        run: npm test
 
 
   security-scan:
@@ -43,7 +54,8 @@ jobs:
     needs: build-test
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
@@ -58,23 +70,33 @@ jobs:
     needs: security-scan
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Azure Login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Login to ACR
+      - name: Login to Azure Container Registry
         run: az acr login --name $ACR_NAME
 
-      - name: Build Docker image
-        run: |
-          docker build -t $ACR_LOGIN_SERVER/$IMAGE_NAME:${{ github.sha }} .
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Push image to ACR
-        run: |
-          docker push $ACR_LOGIN_SERVER/$IMAGE_NAME:${{ github.sha }}
+      - name: Docker Build Cache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-docker-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-docker-
+
+      - name: Build Docker image
+        run: docker build -t $ACR_LOGIN_SERVER/$IMAGE_NAME:${{ github.sha }} ./app
+
+      - name: Push Docker image
+        run: docker push $ACR_LOGIN_SERVER/$IMAGE_NAME:${{ github.sha }}
 
 
   deploy-dev:
@@ -130,3 +152,4 @@ jobs:
           --name $CONTAINER_APP_PROD \
           --resource-group $RESOURCE_GROUP \
           --image $ACR_LOGIN_SERVER/$IMAGE_NAME:${{ github.sha }}
+
